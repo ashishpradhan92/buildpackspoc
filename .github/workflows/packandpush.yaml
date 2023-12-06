@@ -16,37 +16,52 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_PASS }}
-    - name: Get git sha short
-      id: vars
-      #run: echo "sha_short::$(git rev-parse --short HEAD)"
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    # - name: Get git sha short
+    #   id: vars
+    #   #run: echo "sha_short::$(git rev-parse --short HEAD)"
+    #   run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    # - id: setup-pack
+    #   uses: buildpacks/github-actions/setup-pack@v4.4.0
+    - id: setup-tools
+      uses: buildpacks/github-actions/setup-tools@v5.1.0
     - id: setup-pack
-      uses: buildpacks/github-actions/setup-pack@v4.4.0
+      uses: buildpacks/github-actions/setup-pack@v5.1.0
     - id: package
       run: |
         #!/usr/bin/env bash
-        pack build --path .  --builder heroku/buildpacks:20 --publish ${REPO}/cnb:sha-${{ steps.vars.outputs.sha_short }}   
+        set -euo pipefail
+        BP_ID="$(cat buildpack.toml | yj -t | jq -r .buildpack.id)"
+        VERSION="$(cat buildpack.toml | yj -t | jq -r .buildpack.version)"
+        PACKAGE="${REPO}/$(echo "$BP_ID" | sed 's/\//_/g')"
+        pack buildpack package --publish ${PACKAGE}:${VERSION}
+        DIGEST="$(crane digest ${PACKAGE}:${VERSION})"
+        echo "bp_id=$BP_ID" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "address=${PACKAGE}@${DIGEST}" >> "$GITHUB_OUTPUT" 
+      # run: |
+      #   #!/usr/bin/env bash
+      #   pack build --path .  --builder heroku/buildpacks:20 --publish ${REPO}/cnb:sha-${{ steps.vars.outputs.sha_short }}   
       shell: bash
       env:
         REPO: docker.io/${{ secrets.DOCKER_HUB_USER }}
 
-    - name: Generate deploy manifest from Jinja template
-      uses: cuchi/jinja2-action@v1.1.0
-      with: 
-        template: tmpl/hello.j2
-        output_file: demo/hello.yaml
-        strict: true
-        variables: |
-          image_deploy_tag=sha-${{ steps.vars.outputs.sha_short }}
+    # - name: Generate deploy manifest from Jinja template
+    #   uses: cuchi/jinja2-action@v1.1.0
+    #   with: 
+    #     template: tmpl/hello.j2
+    #     output_file: demo/hello.yaml
+    #     strict: true
+    #     variables: |
+    #       image_deploy_tag=sha-${{ steps.vars.outputs.sha_short }}
             
-    - name: Commit deploy manifest on local repo
-      run: |
-        git config --local user.email "ashishvpradhan92@gmail.com"
-        git config --local user.name "ashishpradhan92"
-        git add .
-        git commit -s -m "[skip ci] Generate deployment manifests" 
+    # - name: Commit deploy manifest on local repo
+    #   run: |
+    #     git config --local user.email "ashishvpradhan92@gmail.com"
+    #     git config --local user.name "ashishpradhan92"
+    #     git add .
+    #     git commit -s -m "[skip ci] Generate deployment manifests" 
           
-    - name: Push deploy manifests to local repo
-      uses: ad-m/github-push-action@master
-      with: 
-        github_token: ${{ secrets.AUTO_COMMIT_TOKEN }}            
+    # - name: Push deploy manifests to local repo
+    #   uses: ad-m/github-push-action@master
+    #   with: 
+    #     github_token: ${{ secrets.AUTO_COMMIT_TOKEN }}            
