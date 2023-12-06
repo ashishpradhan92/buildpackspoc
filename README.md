@@ -1,2 +1,2 @@
-# buildpackspoc
-Repository for implementation of BuildPacks POC
+# CNB
+This is the repo for Cloud Native Buildpacks demo.
