@@ -16,15 +16,12 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_PASS }}
-    - name: Get git sha short
-      id: vars
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
     - id: setup-pack
       uses: buildpacks/github-actions/setup-pack@v4.4.0
     - id: package
       run: |
         #!/usr/bin/env bash
-        pack build --path .  --builder heroku/buildpacks:20 --publish ${REPO}/cnb:sha-${{ steps.vars.outputs.sha_short }}  
+        pack build --path .  --builder heroku/buildpacks:20 --publish ${REPO}/cnb::${{ github.run_number }}  
       shell: bash
       env:
         REPO: docker.io/${{ secrets.DOCKER_HUB_USER }}
