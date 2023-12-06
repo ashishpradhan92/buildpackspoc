@@ -14,7 +14,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: ashishpradhan92/cnb:sha-$(git rev-parse --short HEAD)
+        image: ashishpradhan92/cnb:sha-74913cd
         imagePullPolicy: Always
         ports:
         - containerPort: 80
