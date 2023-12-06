@@ -16,6 +16,9 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_PASS }}
+    - name: Get git sha short
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
     - id: setup-pack
       uses: buildpacks/github-actions/setup-pack@v4.4.0
     - id: package
